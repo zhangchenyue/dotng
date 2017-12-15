@@ -229,3 +229,46 @@ ModelManifest.xml
 /View/ut
 /View/pkg
 /View/server/public
+
+
+
+# compiled output
+/client/dist
+/client/tmp
+/client/out-tsc
+
+# dependencies
+/client/node_modules
+
+# IDEs and editors
+/client/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/client/.sass-cache
+/client/connect.lock
+/client/coverage
+/client/libpeerconnection.log
+client/npm-debug.log
+client/testem.log
+/client/typings
+
+# e2e
+/client/e2e/*.js
+/client/e2e/*.map
+
+# System Files
+client/.DS_Store
+client/Thumbs.db
