@@ -1,0 +1,21 @@
+{
+    "version": "1.0.0",
+    "name": "dotng",
+    "private": true,
+    "scripts": {
+      "rm": "node client/node_modules/rimraf/bin",
+      "clean": "npm run rm server/public client/dist pkg ut bin",
+      "postinstall": "npm run server:install && npm run client:install",
+      "client:install": "cd client && npm install",
+      "server:install": "cd server && npm install",
+      "lint": "cd client && npm run lint",
+      "start": "node server/startup",
+      "build": "npm run clean && cd client && npm run build:aot ",
+      "build:dev": "npm run clean && cd client && npm run build:jit ",
+      "debug": "npm run clean && cd client && npm run debug",
+      "mock": "npm run clean && cd client && npm run mock",
+      "test": "npm run rm ut && cd client && npm test",
+      "pkg": "npm run rm pkg && node client/node_modules/ncp/bin/ncp server pkg && npm run rm pkg/package*.json"
+    }
+  }
+  

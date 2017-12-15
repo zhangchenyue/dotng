@@ -445,14 +445,6 @@ module.exports = {
         "context": "src",
         "to": "",
         "from": {
-          "glob": "assets/**/*",
-          "dot": true
-        }
-      },
-      {
-        "context": "src",
-        "to": "",
-        "from": {
           "glob": "favicon.ico",
           "dot": true
         }
