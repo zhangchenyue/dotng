@@ -272,3 +272,4 @@ client/testem.log
 # System Files
 client/.DS_Store
 client/Thumbs.db
+server/public

@@ -1,22 +1,22 @@
-const fs = require('fs');
+process.noDeprecation = true;
+var isDevBuild = process.argv.indexOf('--env.prod') < 0;
 const path = require('path');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const ProgressPlugin = require('webpack/lib/ProgressPlugin');
-const CircularDependencyPlugin = require('circular-dependency-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const fs = require('fs');
 const rxPaths = require('rxjs/_esm5/path-mapping');
+
+
 const autoprefixer = require('autoprefixer');
 const postcssUrl = require('postcss-url');
 const cssnano = require('cssnano');
 const customProperties = require('postcss-custom-properties');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const { AngularCompilerPlugin } = require('@ngtools/webpack');
-const { NoEmitOnErrorsPlugin } = require('webpack');
-const { BaseHrefWebpackPlugin, SuppressExtractedTextChunksWebpackPlugin } = require('@angular/cli/plugins/webpack');
-const entryPoints = ["inline", "polyfills", "sw-register", "styles", "vendor", "main"];
 const minimizeCss = true;
-const baseHref = "";
-const deployUrl = "";
+const externalCss = [
+    path.join(process.cwd(), "node_modules/bootstrap/dist/css/bootstrap.css"),
+    path.join(process.cwd(), "node_modules/font-awesome/css/font-awesome.css"),
+    path.join(process.cwd(), "src/assets/global_theme_light.css"),
+    path.join(process.cwd(), "src/assets/font.scss"),
+    path.join(process.cwd(), "src/styles.scss")
+]
 const postcssPlugins = function () {
     // safe settings based on: https://github.com/ben-eb/cssnano/issues/358#issuecomment-283696193
     const importantCommentRe = /@preserve|@licen[cs]e|[@#]\s*source(?:Mapping)?URL|^!/i;
@@ -60,15 +60,24 @@ const postcssPlugins = function () {
         customProperties({ preserve: true })
     ].concat(minimizeCss ? [cssnano(minimizeOptions)] : []);
 };
+const { NoEmitOnErrorsPlugin, EnvironmentPlugin, HashedModuleIdsPlugin, SourceMapDevToolPlugin } = require('webpack');
+const { BaseHrefWebpackPlugin, SuppressExtractedTextChunksWebpackPlugin } = require('@angular/cli/plugins/webpack');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const ProgressPlugin = require('webpack/lib/ProgressPlugin');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-const externalStyles = [
-    "./node_modules/bootstrap/dist/css/bootstrap.css",
-    "./node_modules/font-awesome/css/font-awesome.css",
-    "./src/assets/global_theme_light.css",
-    "./src/assets/font.scss",
-    "./src/styles.scss"
-]
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const { CommonsChunkPlugin, ModuleConcatenationPlugin } = require('webpack').optimize;
+const { LicenseWebpackPlugin } = require('license-webpack-plugin');
+const { PurifyPlugin } = require('@angular-devkit/build-optimizer');
+const { AngularCompilerPlugin } = require('@ngtools/webpack');
 
+const nodeModules = path.join(process.cwd(), 'node_modules');
+const realNodeModules = fs.realpathSync(nodeModules);
+const genDirNodeModules = path.join(process.cwd(), 'src', '$$_gendir', 'node_modules');
+const entryPoints = ["inline", "polyfills", "sw-register", "styles", "vendor", "main"];
 module.exports = {
     "resolve": {
         "extensions": [
@@ -101,10 +110,10 @@ module.exports = {
         "polyfills": [
             "./src/polyfills.ts"
         ],
-        "styles": externalStyles
+        "styles": externalCss
     },
     "output": {
-        "path": path.join(process.cwd(), "dist"),
+        "path": path.join(process.cwd(), "../server/public"),
         "filename": "[name].[chunkhash:20].bundle.js",
         "chunkFilename": "[id].[chunkhash:20].chunk.js",
         "crossOriginLoading": false
@@ -132,7 +141,18 @@ module.exports = {
                 }
             },
             {
-                "exclude": externalStyles,
+                "test": /\.js$/,
+                "use": [
+                    {
+                        "loader": "@angular-devkit/build-optimizer/webpack-loader",
+                        "options": {
+                            "sourceMap": false
+                        }
+                    }
+                ]
+            },
+            {
+                "exclude": externalCss,
                 "test": /\.css$/,
                 "use": [
                     "exports-loader?module.exports.toString()",
@@ -154,7 +174,7 @@ module.exports = {
                 ]
             },
             {
-                "exclude": externalStyles,
+                "exclude": externalCss,
                 "test": /\.scss$|\.sass$/,
                 "use": [
                     "exports-loader?module.exports.toString()",
@@ -184,7 +204,7 @@ module.exports = {
                 ]
             },
             {
-                "exclude": externalStyles,
+                "exclude": externalCss,
                 "test": /\.less$/,
                 "use": [
                     "exports-loader?module.exports.toString()",
@@ -212,7 +232,7 @@ module.exports = {
                 ]
             },
             {
-                "exclude": externalStyles,
+                "exclude": externalCss,
                 "test": /\.styl$/,
                 "use": [
                     "exports-loader?module.exports.toString()",
@@ -241,7 +261,7 @@ module.exports = {
                 ]
             },
             {
-                "include": externalStyles,
+                "include": externalCss,
                 "test": /\.css$/,
                 "loaders": ExtractTextPlugin.extract({
                     "use": [
@@ -265,7 +285,7 @@ module.exports = {
                 })
             },
             {
-                "include": externalStyles,
+                "include": externalCss,
                 "test": /\.scss$|\.sass$/,
                 "loaders": ExtractTextPlugin.extract({
                     "use": [
@@ -297,7 +317,7 @@ module.exports = {
                 })
             },
             {
-                "include": externalStyles,
+                "include": externalCss,
                 "test": /\.less$/,
                 "loaders": ExtractTextPlugin.extract({
                     "use": [
@@ -327,7 +347,7 @@ module.exports = {
                 })
             },
             {
-                "include": externalStyles,
+                "include": externalCss,
                 "test": /\.styl$/,
                 "loaders": ExtractTextPlugin.extract({
                     "use": [
@@ -357,11 +377,34 @@ module.exports = {
                     "publicPath": ""
                 })
             }
-        ]
+        ].concat(isDevBuild ? [
+            { "test": /\.ts$/, "loader": "@ngtools/webpack" }
+        ] : [
+                {
+                    "test": /(?:\.ngfactory\.js|\.ngstyle\.js|\.ts)$/,
+                    "use": [
+                        {
+                            "loader": "@angular-devkit/build-optimizer/webpack-loader",
+                            "options": {
+                                "sourceMap": false
+                            }
+                        },
+                        "@ngtools/webpack"
+                    ]
+                }
+            ])
     },
     "plugins": [
         new NoEmitOnErrorsPlugin(),
         new CopyWebpackPlugin([
+            {
+                "context": "src",
+                "to": "",
+                "from": {
+                    "glob": "assets/**/*",
+                    "dot": true
+                }
+            },
             {
                 "context": "src",
                 "to": "",
@@ -383,9 +426,8 @@ module.exports = {
             "exclude": /(\\|\/)node_modules(\\|\/)/,
             "failOnError": false,
             "onDetected": false,
-            "cwd": process.cwd()
+            "cwd": "E:\\Prism\\dotng\\client"
         }),
-        new BaseHrefWebpackPlugin({}),
         new HtmlWebpackPlugin({
             "template": "./src\\index.html",
             "filename": "./index.html",
@@ -418,10 +460,124 @@ module.exports = {
                 }
             }
         }),
+        new BaseHrefWebpackPlugin({}),
         new ExtractTextPlugin({
             "filename": "[name].[contenthash:20].bundle.css"
+        }),
+        new SuppressExtractedTextChunksWebpackPlugin(),
+        new CommonsChunkPlugin({
+            "name": [
+                "inline"
+            ],
+            "minChunks": null
+        }),
+        new CommonsChunkPlugin({
+            "name": [
+                "main"
+            ],
+            "minChunks": 2,
+            "async": "common"
+        }),
+        new HashedModuleIdsPlugin({
+            "hashFunction": "md5",
+            "hashDigest": "base64",
+            "hashDigestLength": 4
+        }),
+        new ModuleConcatenationPlugin({}),
+    ].concat(isDevBuild ? [
+        new CommonsChunkPlugin({
+            "name": [
+                "vendor"
+            ],
+            "minChunks": (module) => {
+                return module.resource
+                    && (module.resource.startsWith(nodeModules)
+                        || module.resource.startsWith(genDirNodeModules)
+                        || module.resource.startsWith(realNodeModules));
+            },
+            "chunks": [
+                "main"
+            ]
+        }),
+        new SourceMapDevToolPlugin({
+            "filename": "[file].map[query]",
+            "moduleFilenameTemplate": "[resource-path]",
+            "fallbackModuleFilenameTemplate": "[resource-path]?[hash]",
+            "sourceRoot": "webpack:///"
+        }),
+
+
+        new AngularCompilerPlugin({
+            "mainPath": "main.ts",
+            "platform": 0,
+            "sourceMap": true,
+            "tsConfigPath": "src\\tsconfig.app.json",
+            "compilerOptions": {}
         })
-    ],
+    ] : [
+            new EnvironmentPlugin({
+                "NODE_ENV": "production"
+            }),
+
+            new LicenseWebpackPlugin({
+                "licenseFilenames": [
+                    "LICENSE",
+                    "LICENSE.md",
+                    "LICENSE.txt",
+                    "license",
+                    "license.md",
+                    "license.txt"
+                ],
+                "perChunkOutput": false,
+                "outputTemplate": "E:\\Prism\\dotng\\client\\node_modules\\license-webpack-plugin\\output.template.ejs",
+                "outputFilename": "3rdpartylicenses.txt",
+                "suppressErrors": true,
+                "includePackagesWithoutLicense": false,
+                "abortOnUnacceptableLicense": false,
+                "addBanner": false,
+                "bannerTemplate": "/*! 3rd party license information is available at <%- filename %> */",
+                "includedChunks": [],
+                "excludedChunks": [],
+                "additionalPackages": [],
+                "pattern": /^(MIT|ISC|BSD.*)$/
+            }),
+            new PurifyPlugin(),
+            new UglifyJsPlugin({
+                "test": /\.js$/i,
+                "extractComments": false,
+                "sourceMap": false,
+                "cache": false,
+                "parallel": false,
+                "uglifyOptions": {
+                    "output": {
+                        "ascii_only": true,
+                        "comments": false,
+                        "webkit": true
+                    },
+                    "ecma": 5,
+                    "warnings": false,
+                    "ie8": false,
+                    "mangle": {
+                        "safari10": true
+                    },
+                    "compress": {
+                        "typeofs": false,
+                        "pure_getters": true,
+                        "passes": 3
+                    }
+                }
+            }),
+            new AngularCompilerPlugin({
+                "mainPath": "main.ts",
+                "platform": 0,
+                "hostReplacementPaths": {
+                    "environments\\environment.ts": "environments\\environment.prod.ts"
+                },
+                "sourceMap": false,
+                "tsConfigPath": "src\\tsconfig.app.json",
+                "compilerOptions": {}
+            })
+        ]),
     "node": {
         "fs": "empty",
         "global": true,
@@ -442,4 +598,4 @@ module.exports = {
         chunkModules: false,
         modules: false,
     }
-};
+}
